@@ -7,7 +7,6 @@ import { Button } from "./ui/button";
 const navigation = [
   { name: "추천", href: "/recommand" },
   { name: "AI 비교", href: "/compare" },
-  { name: "AI 모델", href: "/models" },
   { name: "활용사례", href: "#" },
 ];
 

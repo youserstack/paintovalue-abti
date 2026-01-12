@@ -3,137 +3,171 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function ComparePage() {
-  const router = useRouter();
-  const [tools, setTools] = useState(["ChatGPT", "Claude", "Gemini"]);
-  const [language, setLanguage] = useState("한국어");
-  const [plan, setPlan] = useState("유료 기본");
-  const [format, setFormat] = useState("일반 응답");
-  const [prompt, setPrompt] = useState("");
+const initialModels = [
+  {
+    name: "ChatGPT",
+    type: "Chatbot",
+    pricing: "Freemium",
+    tags: ["#한국어 우수", "#코딩", "#글쓰기"],
+    selected: true,
+  },
+  {
+    name: "Gemini",
+    type: "Chatbot",
+    pricing: "Freemium",
+    tags: ["#Google 연동", "#멀티모달"],
+    selected: false,
+  },
+  {
+    name: "Midjourney",
+    type: "Image",
+    pricing: "Paid",
+    tags: ["#고화질", "#이미지 생성"],
+    selected: false,
+  },
+  {
+    name: "Wrtn (뤼튼)",
+    type: "Chatbot",
+    pricing: "Free",
+    tags: ["#한국어 특화", "#무료 GPT-4"],
+    selected: false,
+  },
+];
 
-  const removeTool = (tool: string) => {
-    setTools(tools.filter((t) => t !== tool));
+export default function ModelsPage() {
+  const router = useRouter();
+  const [models, setModels] = useState(initialModels);
+  const [search, setSearch] = useState("");
+  const [categories, setCategories] = useState(["Chatbot", "Image", "Writing", "Video"]);
+  const [prices, setPrices] = useState(["Free", "Paid", "Freemium"]);
+
+  const toggleModel = (name: string) => {
+    setModels(models.map((m) => (m.name === name ? { ...m, selected: !m.selected } : m)));
   };
+
+  const toggleCategory = (category: string) => {
+    setCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
+  };
+
+  const togglePrice = (price: string) => {
+    setPrices((prev) => (prev.includes(price) ? prev.filter((p) => p !== price) : [...prev, price]));
+  };
+
+  const filteredModels = models.filter((model) => {
+    const matchSearch =
+      model.name.toLowerCase().includes(search.toLowerCase()) ||
+      model.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+    const matchCategory = categories.includes(model.type);
+    const matchPrice = prices.includes(model.pricing);
+    return matchSearch && matchCategory && matchPrice;
+  });
+
+  const selectedCount = models.filter((m) => m.selected).length;
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex justify-center">
-      <div className="w-full max-w-5xl px-6 py-12 space-y-8">
-        {/* 제목 */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">비교 설정</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            선택한 AI 도구로 동일한 프롬프트를 실행하고 결과를 비교합니다
-          </p>
+      <div className="w-full max-w-7xl px-6 py-12 space-y-10">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">AI 모델 둘러보기</h1>
+            <p className="text-gray-600 dark:text-gray-400">다양한 AI 모델을 탐색하고 비교할 대상을 선택하세요.</p>
+          </div>
+
+          <button
+            onClick={() => router.push("/compare/set")}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2 rounded-lg font-semibold text-white hover:opacity-90 transition"
+          >
+            {selectedCount}개의 AI 모델 비교하기
+          </button>
         </div>
 
-        {/* 비교 대상 */}
-        <section className="bg-gray-50 dark:bg-neutral-900 rounded-xl p-6 space-y-4">
-          <h2 className="font-semibold text-lg">비교 대상</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{tools.length}개의 AI 도구가 선택되었습니다.</p>
+        <div className="flex gap-8">
+          {/* 필터 */}
+          <aside className="w-64 bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white rounded-xl p-5 space-y-6">
+            <div className="flex items-center gap-2 font-semibold">🔍 필터</div>
 
-          <div className="flex gap-3">
-            {tools.map((tool) => (
-              <span
-                key={tool}
-                className="flex items-center gap-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-transparent px-4 py-2 rounded-full text-sm"
-              >
-                {tool}
-                <button
-                  onClick={() => removeTool(tool)}
-                  className="text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* 비교 조건 */}
-        <section className="bg-gray-50 dark:bg-neutral-900 rounded-xl p-6 space-y-6">
-          <h2 className="font-semibold text-lg">비교 조건</h2>
-
-          {/* 언어 */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">언어</label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg px-4 py-2"
-            >
-              <option>한국어</option>
-              <option>English</option>
-            </select>
-          </div>
-
-          {/* 사용 플랜 */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">사용 플랜</label>
-            <select
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-              className="w-full bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg px-4 py-2"
-            >
-              <option>유료 기본</option>
-              <option>무료</option>
-            </select>
-          </div>
-
-          {/* 출력 포맷 */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">출력 포맷</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {["일반 응답", "불릿 포인트", "표", "코드", "에세이"].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFormat(f)}
-                  className={`border rounded-lg px-4 py-3 text-sm transition ${
-                    format === f
-                      ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "bg-white dark:bg-transparent border-gray-300 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-800"
-                  }`}
-                >
-                  {f}
-                </button>
+            <div className="space-y-2">
+              <p className="font-semibold">카테고리</p>
+              {["Chatbot", "Image", "Writing", "Video"].map((c) => (
+                <label key={c} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={categories.includes(c)} onChange={() => toggleCategory(c)} />
+                  {c}
+                </label>
               ))}
             </div>
-          </div>
 
-          {/* 프롬프트 */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">프롬프트 *</label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="AI에게 물어볼 내용을 입력하세요"
-              className="w-full min-h-[140px] bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg px-4 py-3 resize-none"
+            <div className="space-y-2">
+              <p className="font-semibold">요금제</p>
+              {["Free", "Paid", "Freemium"].map((p) => (
+                <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={prices.includes(p)} onChange={() => togglePrice(p)} />
+                  {p}
+                </label>
+              ))}
+            </div>
+          </aside>
+
+          {/* 메인 */}
+          <main className="flex-1 space-y-6">
+            {/* 검색 */}
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="모델 이름, 용도, 카테고리로 검색"
+              className="w-full bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-transparent text-gray-900 dark:text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <p className="text-xs text-gray-500">동일한 프롬프트가 모든 AI에 전송됩니다</p>
-          </div>
-        </section>
 
-        {/* 비교 팁 */}
-        <section className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 space-y-2">
-          <h3 className="font-semibold text-yellow-700 dark:text-yellow-400">⚡ 비교 팁</h3>
-          <ul className="text-sm text-yellow-600 dark:text-yellow-200 list-disc pl-5 space-y-1">
-            <li>구체적인 프롬프트가 더 명확한 비교 결과를 만듭니다</li>
-            <li>동일한 출력 포맷을 지정하면 결과 비교가 쉬워집니다</li>
-            <li>2~4개의 도구를 비교하는 것이 가장 효과적입니다</li>
-          </ul>
-        </section>
+            {/* 카드 목록 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredModels.map((model) => (
+                <div
+                  key={model.name}
+                  className={`rounded-xl p-5 border ${
+                    model.selected
+                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
+                      : "border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-300">
+                      {model.type}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={model.selected}
+                      onChange={() => toggleModel(model.name)}
+                      className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                  </div>
 
-        {/* 하단 바 */}
-        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-xl flex items-center justify-between text-white">
-          <div>
-            <p className="font-semibold">설정 완료</p>
-            <p className="text-xs text-indigo-200">{tools.length}개 도구로 비교를 시작할 준비가 되었습니다</p>
-          </div>
-          <button
-            onClick={() => router.push("/compare/result")}
-            className="bg-white text-black px-6 py-2 rounded-lg font-semibold hover:scale-105 transition"
-          >
-            ▶ 비교 시작하기
-          </button>
+                  <h3 className="text-lg font-semibold mt-3">{model.name}</h3>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {model.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-1 bg-gray-100 dark:bg-neutral-800 rounded-full text-gray-600 dark:text-gray-300"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => toggleModel(model.name)}
+                    className={`mt-4 w-full py-2 rounded-lg text-sm font-semibold ${
+                      model.selected
+                        ? "bg-indigo-600 text-white"
+                        : "border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {model.selected ? "비교 대상에서 제외" : "비교 대상에 추가"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </main>
         </div>
       </div>
     </div>
